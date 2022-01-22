@@ -10,6 +10,26 @@ const GasTable = require("./lib/gasTable");
 const SyncRequest = require("./lib/syncRequest");
 const mochaStats = require("./lib/mochaStats");
 
+const {
+  EVENT_HOOK_BEGIN,
+  EVENT_HOOK_END,
+  EVENT_RUN_BEGIN,
+  EVENT_DELAY_BEGIN,
+  EVENT_DELAY_END,
+  EVENT_RUN_END,
+  EVENT_SUITE_BEGIN,
+  EVENT_SUITE_END,
+  EVENT_TEST_BEGIN,
+  EVENT_TEST_END,
+  EVENT_TEST_FAIL,
+  EVENT_TEST_PASS,
+  EVENT_TEST_PENDING,
+  EVENT_TEST_RETRY,
+  STATE_IDLE,
+  STATE_RUNNING,
+  STATE_STOPPED
+} = mocha.Runner.constants;
+
 /**
  * Based on the Mocha 'Spec' reporter. Watches an Ethereum test suite run
  * and collects data about method & deployments gas usage. Mocha executes the hooks
@@ -54,47 +74,63 @@ function Gas(runner, options) {
 
   // ------------------------------------  Runners -------------------------------------------------
 
-  runner.on("start", () => {
+  runner.on(EVENT_RUN_BEGIN, () => {
+    console.log("start");
     watch.data.initialize(config);
   });
 
-  runner.on("suite", suite => {
+  runner.on(EVENT_SUITE_BEGIN, suite => {
+    console.log("suite:", suite.title);
+
     ++indents;
     log(color("suite", "%s%s"), indent(), suite.title);
   });
 
-  runner.on("suite end", () => {
+  runner.on(EVENT_SUITE_END, suite => {
+    console.log("suite end:", suite.title);
     --indents;
     if (indents === 1) {
       log();
     }
   });
 
-  runner.on("pending", test => {
+  runner.on(EVENT_TEST_PENDING, async test => {
+    console.log("pending:", test.title);
+
     let fmt = indent() + color("pending", "  - %s");
     log(fmt, test.title);
   });
 
-  runner.on("test", () => {
+  runner.on("test", async test => {
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    console.log("test:", test.title);
+
     if (!config.provider) {
       watch.beforeStartBlock = sync.blockNumber();
     }
     watch.data.resetAddressCache();
   });
 
-  runner.on("hook end", hook => {
+  runner.on(EVENT_HOOK_END, hook => {
+    console.log("hook end:", hook.title);
     if (hook.title.includes("before each") && !config.provider) {
       watch.itStartBlock = sync.blockNumber() + 1;
     }
   });
 
-  runner.on("pass", test => {
+  runner.on(EVENT_HOOK_BEGIN, hook => {
+    console.log("hook start:", hook.title);
+  });
+
+  runner.on(EVENT_TEST_PASS, test => {
     let fmt;
     let fmtArgs;
     let gasUsedString;
     let consumptionString;
     let timeSpentString = color(test.speed, "%dms");
     let gasUsed;
+
+    console.log("pass:", test.title);
 
     if (!config.provider) {
       gasUsed = watch.blocks();
@@ -134,14 +170,17 @@ function Gas(runner, options) {
     log.apply(null, [fmt, ...fmtArgs]);
   });
 
-  runner.on("fail", test => {
+  runner.on(EVENT_TEST_FAIL, test => {
+    console.log("fail:", test.title);
+
     failed = true;
     let fmt = indent() + color("fail", "  %d) %s");
     log();
     log(fmt, ++n, test.title);
   });
 
-  runner.on("end", () => {
+  runner.on(EVENT_RUN_END, () => {
+    console.log("end");
     table.generate(watch.data);
     self.epilogue();
   });
