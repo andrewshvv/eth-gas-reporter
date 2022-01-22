@@ -43,6 +43,7 @@
     "@solidity-parser/parser": "^0.14.0",
     "cli-table3": "^0.5.0",
     "colors": "1.4.0",
+    "deasync": "^0.1.24",
     "ethereumjs-util": "6.2.0",
     "fs-readdir-recursive": "^1.1.0",
     "lodash": "^4.17.14",

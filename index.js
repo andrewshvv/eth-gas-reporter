@@ -9,6 +9,7 @@ const TransactionWatcher = require("./lib/transactionWatcher");
 const GasTable = require("./lib/gasTable");
 const SyncRequest = require("./lib/syncRequest");
 const mochaStats = require("./lib/mochaStats");
+const deasync = require("deasync");
 
 const {
   EVENT_HOOK_BEGIN,
@@ -41,6 +42,7 @@ const {
  * @param {Object} runner  mocha's runner
  * @param {Object} options reporter.options (see README example usage)
  */
+
 function Gas(runner, options) {
   // Spec reporter
   Base.call(this, runner, options);
@@ -63,6 +65,7 @@ function Gas(runner, options) {
   const sync = new SyncRequest(config.url);
   const watch = new TransactionWatcher(config);
   const table = new GasTable(config);
+  const provider = config.provider;
 
   // Expose internal methods to plugins
   if (typeof options.attachments === "object") {
@@ -101,19 +104,20 @@ function Gas(runner, options) {
     log(fmt, test.title);
   });
 
-  runner.on("test", async test => {
-    await new Promise(resolve => setTimeout(resolve, 2000));
+  // ------------------------------------  RPC part -------------------------------------------------
+
+  runner.on("test", test => {
     console.log("test:", test.title);
 
-    if (!config.provider) {
-      watch.beforeStartBlock = sync.blockNumber();
-    }
+    // if (!config.provider) {
+    watch.beforeStartBlock = sync.blockNumber();
+    // }
     watch.data.resetAddressCache();
   });
 
   runner.on(EVENT_HOOK_END, hook => {
     console.log("hook end:", hook.title);
-    if (hook.title.includes("before each") && !config.provider) {
+    if (hook.title.includes("before each")) {
       watch.itStartBlock = sync.blockNumber() + 1;
     }
   });
@@ -131,43 +135,50 @@ function Gas(runner, options) {
     let gasUsed;
 
     console.log("pass:", test.title);
+    const endBlock = sync.blockNumber();
+    const startBlock = watch.beforeStartBlock;
+    const itStartBlock = watch.itStartBlock;
 
-    if (!config.provider) {
-      gasUsed = watch.blocks();
-    }
+    fn = async (startBlock, endBlock, itStartBlock) => {
+      gasUsed = await watch.collectGasUsage(startBlock, endBlock, itStartBlock);
+      // }
 
-    if (gasUsed) {
-      gasUsedString = color("checkmark", "%d gas");
+      if (gasUsed) {
+        gasUsedString = color("checkmark", "%d gas");
 
-      if (config.showTimeSpent) {
-        consumptionString = " (" + timeSpentString + ", " + gasUsedString + ")";
-        fmtArgs = [test.title, test.duration, gasUsed];
+        if (config.showTimeSpent) {
+          consumptionString =
+            " (" + timeSpentString + ", " + gasUsedString + ")";
+          fmtArgs = [test.title, test.duration, gasUsed];
+        } else {
+          consumptionString = " (" + gasUsedString + ")";
+          fmtArgs = [test.title, gasUsed];
+        }
+
+        fmt =
+          indent() +
+          color("checkmark", "  " + Base.symbols.ok) +
+          color("pass", " %s") +
+          consumptionString;
       } else {
-        consumptionString = " (" + gasUsedString + ")";
-        fmtArgs = [test.title, gasUsed];
-      }
+        if (config.showTimeSpent) {
+          consumptionString = " (" + timeSpentString + ")";
+          fmtArgs = [test.title, test.duration];
+        } else {
+          consumptionString = "";
+          fmtArgs = [test.title];
+        }
 
-      fmt =
-        indent() +
-        color("checkmark", "  " + Base.symbols.ok) +
-        color("pass", " %s") +
-        consumptionString;
-    } else {
-      if (config.showTimeSpent) {
-        consumptionString = " (" + timeSpentString + ")";
-        fmtArgs = [test.title, test.duration];
-      } else {
-        consumptionString = "";
-        fmtArgs = [test.title];
+        fmt =
+          indent() +
+          color("checkmark", "  " + Base.symbols.ok) +
+          color("pass", " %s") +
+          consumptionString;
       }
+      log.apply(null, [fmt, ...fmtArgs]);
+    };
 
-      fmt =
-        indent() +
-        color("checkmark", "  " + Base.symbols.ok) +
-        color("pass", " %s") +
-        consumptionString;
-    }
-    log.apply(null, [fmt, ...fmtArgs]);
+    // fn(startBlock, endBlock, itStartBlock);
   });
 
   runner.on(EVENT_TEST_FAIL, test => {
@@ -180,9 +191,26 @@ function Gas(runner, options) {
   });
 
   runner.on(EVENT_RUN_END, () => {
-    console.log("end");
-    table.generate(watch.data);
-    self.epilogue();
+    let done = false;
+    async function report() {
+      try {
+        const endBlock = sync.blockNumber();
+        await watch.collectGasUsage(0, endBlock, 0);
+
+        table.generate(watch.data);
+        self.epilogue();
+      } catch (err) {
+        // TODO: What is the proper way?
+        console.log(err);
+      } finally {
+        done = true;
+      }
+    }
+
+    report();
+    while (!done) {
+      require("deasync").sleep(100);
+    }
   });
 }
 
