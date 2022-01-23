@@ -7,13 +7,15 @@ const Config = require("./lib/config");
 const TransactionWatcher = require("./lib/transactionWatcher");
 const GasTable = require("./lib/gasTable");
 const mochaStats = require("./lib/mochaStats");
-const deasync = require("deasync");
+
+var { sleep } = require("deasync");
 
 const {
   EVENT_RUN_BEGIN,
   EVENT_RUN_END,
   EVENT_SUITE_BEGIN,
   EVENT_SUITE_END,
+  EVENT_TEST_BEGIN,
   EVENT_TEST_FAIL,
   EVENT_TEST_PASS,
   EVENT_TEST_PENDING
@@ -61,31 +63,46 @@ class GasReporter extends Base {
 
     // These call the cloud, start running them.
     utils.setGasAndPriceRates(config);
+    self.startBlock = 0;
 
     // ------------------------------------  Runners -------------------------------------------------
 
-    runner.on(EVENT_RUN_BEGIN, () => {
+    runner.on(EVENT_RUN_BEGIN, event => {
       watch.data.initialize(config);
+
+      let startBlock = 0;
+      let done = false;
+
+      (async function() {
+        startBlock = await provider.getBlockNumber();
+        done = true;
+      })();
+
+      while (!done) {
+        sleep(100);
+      }
+
+      this.startBlock = startBlock;
     });
 
-    runner.on(EVENT_SUITE_BEGIN, () => {
+    runner.on(EVENT_SUITE_BEGIN, suite => {
       ++indents;
       log(color("suite", "%s%s"), indent(), suite.title);
     });
 
-    runner.on(EVENT_SUITE_END, () => {
+    runner.on(EVENT_SUITE_END, suite => {
       --indents;
       if (indents === 1) {
         log();
       }
     });
 
-    runner.on(EVENT_TEST_PENDING, async test => {
+    runner.on(EVENT_TEST_PENDING, test => {
       let fmt = indent() + color("pending", "  - %s");
       log(fmt, test.title);
     });
 
-    runner.on("test", () => {
+    runner.on(EVENT_TEST_BEGIN, test => {
       watch.data.resetAddressCache();
     });
 
@@ -120,26 +137,25 @@ class GasReporter extends Base {
 
     runner.on(EVENT_RUN_END, () => {
       let done = false;
-      async function report() {
-        try {
-          const endBlock = await provider.getBlockNumber();
-          if (!collectedOutside) {
-            await watch.collectGasUsage(0, endBlock);
-          }
 
-          table.generate(watch.data);
-          self.epilogue();
-        } catch (err) {
-          // TODO: What is the proper way?
-          console.log(err);
-        } finally {
-          done = true;
+      // Hack: execute async function inside the mocha sync context
+      (async startBlock => {
+        const endBlock = await provider.getBlockNumber();
+        if (!config.collectedOutside) {
+          // Generate data if we're not collecting it outside
+          // Example: in hardhat-eth-gas-reporter
+          await watch.collectGasUsage(startBlock, endBlock);
         }
-      }
 
-      report();
+        table.generate(watch.data);
+        self.epilogue();
+        done = true;
+      })(this.startBlock);
+
+      // Wait for asyn function, otherwise Mocha
+      // will exit before we're done
       while (!done) {
-        deasync.sleep(100);
+        sleep(100);
       }
     });
   }
