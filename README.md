@@ -3,7 +3,7 @@
 [![npm version](https://badge.fury.io/js/eth-gas-reporter.svg)](https://badge.fury.io/js/eth-gas-reporter)
 [![Build Status](https://travis-ci.org/cgewecke/eth-gas-reporter.svg?branch=master)](https://travis-ci.org/cgewecke/eth-gas-reporter)
 [![Codechecks](https://raw.githubusercontent.com/codechecks/docs/master/images/badges/badge-default.svg?sanitize=true)](https://codechecks.io)
-[![buidler](https://buidler.dev/buidler-plugin-badge.svg?1)](https://github.com/cgewecke/buidler-gas-reporter)
+[![hardhat](https://hardhat.org/buidler-plugin-badge.svg?1)](https://github.com/cgewecke/hardhat-gas-reporter)
 
 **A Mocha reporter for Ethereum test suites:**
 
@@ -11,7 +11,7 @@
 - Metrics for method calls and deployments.
 - National currency costs of deploying and using your contract system.
 - CI integration with [codechecks](http://codechecks.io)
-- Simple installation for Truffle and Buidler
+- Simple installation for Truffle and Hardhat
 - Use ETH, BNB, MATIC, AVAX, HT or MOVR price to calculate the gas price.
 
 ### Example output
@@ -37,15 +37,15 @@ module.exports = {
 };
 ```
 
-**[Buidler](https://buidler.dev)**
+**[Hardhat](https://hardhat.org/)**
 
 ```
-npm install --save-dev buidler-gas-reporter
+npm install --save-dev hardhat-gas-reporter
 ```
 
 ```javascript
-/* buidler.config.js */
-usePlugin('buidler-gas-reporter');
+/* hardhat.config.js */
+require('hardhat-gas-reporter');
 
 module.exports = {
   networks: { ... },
@@ -79,7 +79,7 @@ your own API key [here][55] and set it with the `coinmarketcap` option.
 
 In order to retrieve the gas price of a particular blockchain, you can configure the `token` and `gasPriceApi` (API key rate limit may apply).
 
-**NOTE**: HardhatEVM and ganache-cli implement the Ethereum blockchain. To get accurate gas measurements for other chains you may need to run your tests against development clients developed specifically for those networks. 
+**NOTE**: HardhatEVM and ganache-cli implement the Ethereum blockchain. To get accurate gas measurements for other chains you may need to run your tests against development clients developed specifically for those networks.
 
 | Option            | Type                   | Default                                                                    | Description                                                                                                                                                                                                                                  |
 | ----------------- | ---------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -125,7 +125,7 @@ These APIs have [rate limits](https://docs.etherscan.io/support/rate-limits). De
 An advanced use guide is available [here](https://github.com/cgewecke/eth-gas-reporter/blob/master/docs/advanced.md). Topics include:
 
 - Getting accurate gas data when using proxy contracts like EtherRouter or ZeppelinOS.
-- Configuring the reporter to work with non-truffle, non-buidler projects.
+- Configuring the reporter to work with non-truffle, non-hardhat projects.
 
 ### Example Reports
 

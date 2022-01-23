@@ -18,11 +18,11 @@ else
   start_testrpc
 fi
 
-# Buidler is super fast on launch
+# Hardhat is super fast on launch
 sleep 5
 
 # -----------------------  Install Reporter and run tests ------------------------------------------
 install_reporter
 # test_truffle_v5_basic
 # test_truffle_v5_with_options
-test_buildler_v5_plugin
+test_hardhat_v5_plugin

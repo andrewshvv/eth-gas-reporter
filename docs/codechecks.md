@@ -93,7 +93,7 @@ mocha: {
   }
 }
 
-// buidler.config.js
+// hardhat.config.js
 gasReporter: {
   maxMethodDiff: 25,
 }

@@ -63,6 +63,8 @@ typings/
 # Mock debris
 mock/cache/
 mock/artifacts/
+mock/package.json
+mock/package.lock.json
 mock/yarn.lock
 mock/codechecks.js
 mock/codechecksReport.json

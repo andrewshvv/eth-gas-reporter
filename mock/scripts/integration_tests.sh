@@ -36,23 +36,23 @@ test_truffle_v5_with_options() {
   rm ./safe_truffle.js
 }
 
-# --------------------------------- Buidler (V5 plugin) --------------------------------------------
+# --------------------------------- Hardhat (V5 plugin) --------------------------------------------
 
 # Basic, no reporter options specified
 # Swaps out TestMetacoin.sol because it throws a truffle/assert.sol not found error
-test_buildler_v5_plugin() {
+test_hardhat_v5_plugin() {
   echo "-----------------------------------------------------------"
-  echo "> Visual inspection integration test (Buidler - no options)"
+  echo "> Visual inspection integration test (Hardhat - no options)"
   echo "> YOU MUST LOOK AT THIS TEST TO DETECT FAILURE"
   echo "-----------------------------------------------------------"
 
   mv ./test/metacoin.js ./metacoin.js
-  mv ./buidler-metacoinjs-template.js ./test/buidler-metacoinjs-template.js
+  mv ./hardhat-metacoinjs-template.js ./test/hardhat-metacoinjs-template.js
   mv ./test/TestMetacoin.sol ./TestMetacoin.sol
 
-  npx buidler test --network development
+  npx hardhat test --network development
 
   mv ./TestMetacoin.sol ./test/TestMetacoin.sol
   mv ./metacoin.js ./test/metacoin.js
-  mv ./test/buidler-metacoinjs-template.js ./buidler-metacoinjs-template.js
+  mv ./test/hardhat-metacoinjs-template.js ./hardhat-metacoinjs-template.js
 }

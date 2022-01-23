@@ -1,6 +1,6 @@
 ## Advanced Topics
 
-### Configuration for non-buidler, non-truffle projects
+### Configuration for non-hardhat, non-truffle projects
 
 The reporter's only strict requirements are:
 
@@ -16,7 +16,7 @@ the following:
 - The client `url` the reporter uses to send calls.
 
 - The method the reporter uses to acquire necessary info from solc compilation artifacts.
-  Truffle and Buidler are supported out of the box but you can also use the `artifactType`
+  Truffle and Hardhat are supported out of the box but you can also use the `artifactType`
   option to define a function which meets your use case. This method
   receives a contract name (ex: `MetaCoin`) and must return an object as below:
 
