@@ -78,19 +78,15 @@ function Gas(runner, options) {
   // ------------------------------------  Runners -------------------------------------------------
 
   runner.on(EVENT_RUN_BEGIN, () => {
-    console.log("start");
     watch.data.initialize(config);
   });
 
   runner.on(EVENT_SUITE_BEGIN, suite => {
-    console.log("suite:", suite.title);
-
     ++indents;
     log(color("suite", "%s%s"), indent(), suite.title);
   });
 
   runner.on(EVENT_SUITE_END, suite => {
-    console.log("suite end:", suite.title);
     --indents;
     if (indents === 1) {
       log();
@@ -98,8 +94,6 @@ function Gas(runner, options) {
   });
 
   runner.on(EVENT_TEST_PENDING, async test => {
-    console.log("pending:", test.title);
-
     let fmt = indent() + color("pending", "  - %s");
     log(fmt, test.title);
   });
@@ -107,23 +101,16 @@ function Gas(runner, options) {
   // ------------------------------------  RPC part -------------------------------------------------
 
   runner.on("test", test => {
-    console.log("test:", test.title);
-
     // if (!config.provider) {
-    watch.beforeStartBlock = sync.blockNumber();
+    // watch.beforeStartBlock = sync.blockNumber();
     // }
     watch.data.resetAddressCache();
   });
 
   runner.on(EVENT_HOOK_END, hook => {
-    console.log("hook end:", hook.title);
     if (hook.title.includes("before each")) {
       watch.itStartBlock = sync.blockNumber() + 1;
     }
-  });
-
-  runner.on(EVENT_HOOK_BEGIN, hook => {
-    console.log("hook start:", hook.title);
   });
 
   runner.on(EVENT_TEST_PASS, test => {
@@ -134,33 +121,32 @@ function Gas(runner, options) {
     let timeSpentString = color(test.speed, "%dms");
     let gasUsed;
 
-    console.log("pass:", test.title);
-    const endBlock = sync.blockNumber();
-    const startBlock = watch.beforeStartBlock;
-    const itStartBlock = watch.itStartBlock;
+    // const endBlock = sync.blockNumber();
+    // const startBlock = watch.beforeStartBlock;
+    // const itStartBlock = watch.itStartBlock;
 
     fn = async (startBlock, endBlock, itStartBlock) => {
       gasUsed = await watch.collectGasUsage(startBlock, endBlock, itStartBlock);
       // }
 
       if (gasUsed) {
-        gasUsedString = color("checkmark", "%d gas");
+        //   gasUsedString = color("checkmark", "%d gas");
 
-        if (config.showTimeSpent) {
-          consumptionString =
-            " (" + timeSpentString + ", " + gasUsedString + ")";
-          fmtArgs = [test.title, test.duration, gasUsed];
-        } else {
-          consumptionString = " (" + gasUsedString + ")";
-          fmtArgs = [test.title, gasUsed];
-        }
+        //   if (config.showTimeSpent) {
+        //     consumptionString =
+        //       " (" + timeSpentString + ", " + gasUsedString + ")";
+        //     fmtArgs = [test.title, test.duration, gasUsed];
+        //   } else {
+        //     consumptionString = " (" + gasUsedString + ")";
+        //     fmtArgs = [test.title, gasUsed];
+        //   }
 
-        fmt =
-          indent() +
-          color("checkmark", "  " + Base.symbols.ok) +
-          color("pass", " %s") +
-          consumptionString;
-      } else {
+        //   fmt =
+        //     indent() +
+        //     color("checkmark", "  " + Base.symbols.ok) +
+        //     color("pass", " %s") +
+        //     consumptionString;
+        // } else {
         if (config.showTimeSpent) {
           consumptionString = " (" + timeSpentString + ")";
           fmtArgs = [test.title, test.duration];
@@ -178,12 +164,26 @@ function Gas(runner, options) {
       log.apply(null, [fmt, ...fmtArgs]);
     };
 
+    if (config.showTimeSpent) {
+      consumptionString = " (" + timeSpentString + ")";
+      fmtArgs = [test.title, test.duration];
+    } else {
+      consumptionString = "";
+      fmtArgs = [test.title];
+    }
+
+    fmt =
+      indent() +
+      color("checkmark", "  " + Base.symbols.ok) +
+      color("pass", " %s") +
+      consumptionString;
+
+    log.apply(null, [fmt, ...fmtArgs]);
+
     // fn(startBlock, endBlock, itStartBlock);
   });
 
   runner.on(EVENT_TEST_FAIL, test => {
-    console.log("fail:", test.title);
-
     failed = true;
     let fmt = indent() + color("fail", "  %d) %s");
     log();
