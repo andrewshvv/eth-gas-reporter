@@ -56,7 +56,7 @@ class GasReporter extends Base {
     const watch = new TransactionWatcher(config);
     const table = new GasTable(config);
 
-    // Expose internal methods to plugins
+    // Expose internal methods to plugins (like hardhat-eth-gas-reporter)
     if (typeof options.attachments === "object") {
       options.attachments.recordTransaction = watch.transaction.bind(watch);
     }
